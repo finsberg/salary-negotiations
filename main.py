@@ -537,13 +537,15 @@ def forventet_ak_tillegg_med_kpi(df_2023, df_2022, df_2021, df_2020):
 
 
 def plot_lønnsvekts():
-    år = [2020, 2021, 2022, 2023]
-    kpi = [5.4, 6.5, 5.5, 4.0]
+    år = [2021, 2022, 2023, 2024]
+    kpi = [5.4, 6.5, 5.5]
     lønnsvekst = [3.3, 4.38, 5.2]
+    kpi_prognose = [5.5, 4.0]
 
     fig, ax = plt.subplots()
-    ax.plot(år, kpi, marker="o", label="KPI")
+    ax.plot(år[:-1], kpi, marker="o", label="KPI")
     ax.plot(år[:-1], lønnsvekst, marker="o", label="Lønnsvekst")
+    ax.plot(år[-2:], kpi_prognose, "k--o", label="KPI prognose")
     ax.set_xlabel("År")
     ax.set_xticks(år)
     ax.set_xticklabels(år)
@@ -566,6 +568,79 @@ def plot_ak_tillegg(df_2023):
     fig.savefig("ak_tillegg.png")
 
 
+def plot_sammenligning_tenkna_stat(df_2023, df_2022, df_2021, df_2020):
+    df_tekna_stat = pd.read_excel(
+        Path("2023") / "SRL.xlsx",
+        sheet_name="Stat 2023",
+        skiprows=[0, 1, 44, 45, 46, 47, 48],
+    )
+
+    y_stat = df_tekna_stat["Aritmetisk middel  "].to_numpy()
+    y_privat = df_2023[" Glattet aritmetisk middel for Tekna (X)"].to_numpy()
+    y_2023 = df_2023["Gruppens gj.snitts-lønn"].to_numpy()
+    y_2022 = np.zeros_like(y_2023)
+    y_2022[1:] = df_2022["Gruppens gj.snitts-lønn"].to_numpy()[:-1]
+    y_2021 = np.zeros_like(y_2023)
+    y_2021[2:] = df_2021["Gruppens gj.snitts-lønn"].to_numpy()[:-2]
+    y_2020 = np.zeros_like(y_2023)
+    y_2020[3:] = df_2020["Gruppens gj.snitts-lønn"].to_numpy()[:-3]
+    # breakpoint()
+    fig, ax = plt.subplots(figsize=(8, 5))
+    x = df_tekna_stat[" Eks. år     "].to_numpy()
+    ax.plot(x, y_stat, marker="o", label="Stat")
+    ax.plot(x, y_privat, marker="o", label="Privat")
+    ax.plot(x, y_2023, linestyle="", marker="o", label="Simula (2023)")
+    # ax.plot(x[1:], y_2022[1:], marker="o", label="Simula (2022)")
+    # ax.plot(x[2:], y_2021[2:], marker="o", label="Simula (2021)")
+    # ax.plot(x[3:], y_2020[3:], marker="o", label="Simula (2020)")
+    ax.set_xlabel("Eksamens år")
+    ax.set_ylabel("Aritmetisk middel")
+    ax.grid()
+    ax.legend()
+    fig.savefig("sammenligning_tenkna_stat.png")
+
+    ax.set_ylim(0, 1_500_000)
+    fig.savefig("sammenligning_tenkna_stat_ylim.png")
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    x = df_tekna_stat[" Eks. år     "].to_numpy()
+    ax.plot(x, y_stat, marker="o", label="Stat")
+    ax.plot(x, y_privat, marker="o", label="Privat")
+    ax.plot(x, y_2023, linestyle="", marker="o", label="Simula (2023)")
+    ax.plot(x[1:], y_2022[1:], linestyle="", marker="o", label="Simula (2022)")
+    ax.plot(x[2:], y_2021[2:], linestyle="", marker="o", label="Simula (2021)")
+    ax.plot(x[3:], y_2020[3:], linestyle="", marker="o", label="Simula (2020)")
+    ax.set_xlabel("Eksamens år")
+    ax.set_ylabel("Aritmetisk middel")
+    ax.grid()
+    ax.legend()
+    fig.savefig("sammenligning_tenkna_stat_alle.png")
+
+    ax.set_ylim(0, 1_500_000)
+    fig.savefig("sammenligning_tenkna_stat_alle_ylim.png")
+
+
+def plot_eksamensårfordeling(df_2023):
+    # Create pie chart with number of people in each eksamensår
+    fig, ax = plt.subplots()
+    eksamensår = df_2023[" Eks. år     "].to_list()
+    ant_pers = df_2023["Ant pers i bedrifts-gruppen"].to_list()
+
+    M = len(eksamensår) // 5
+    N = len(eksamensår) // 2
+    x = (
+        eksamensår[:M]
+        + [f"{eksamensår[M]}-{eksamensår[N]}"]
+        + [f"etter {eksamensår[N]}"]
+    )
+    y = ant_pers[:M] + [sum(ant_pers[M:N])] + [sum(ant_pers[N:])]
+
+    ax.pie(y, labels=x, autopct="%1.1f%%")
+    ax.set_title("Eksamensårfordeling Tekna gruppe")
+    fig.tight_layout()
+    fig.savefig("eksamensårfordeling.png")
+
+
 def main():
     merge_2023()
     df_2023 = pd.read_excel("2023.xlsx")
@@ -579,6 +654,8 @@ def main():
     df_2022 = pd.read_excel("2022.xlsx", sheet_name="Beregningssjema", skiprows=1)
     df_2022 = df_2022[1:-7]
 
+    plot_eksamensårfordeling(df_2023)
+    plot_sammenligning_tenkna_stat(df_2023, df_2022, df_2021, df_2020)
     plot_gjennomsnittslønn(df_2023, df_2022, df_2021, df_2020)
     plot_differanse_tekna_aritmetisk_middel(df_2023, df_2022, df_2021, df_2020)
     plot_gjennomsnitt_prosentvis_endring(df_2023, df_2022, df_2021, df_2020)
