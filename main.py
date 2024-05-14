@@ -628,11 +628,7 @@ def plot_eksamensårfordeling(df_2023):
 
     M = len(eksamensår) // 5
     N = len(eksamensår) // 2
-    x = (
-        eksamensår[:M]
-        + [f"{eksamensår[M]}-{eksamensår[N]}"]
-        + [f"etter {eksamensår[N]}"]
-    )
+    x = eksamensår[:M] + [f"{eksamensår[M]}-{eksamensår[N]}"] + [f"før {eksamensår[N]}"]
     y = ant_pers[:M] + [sum(ant_pers[M:N])] + [sum(ant_pers[N:])]
 
     ax.pie(y, labels=x, autopct="%1.1f%%")
